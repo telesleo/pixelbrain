@@ -9,43 +9,60 @@ export default function Canvas({
 
   const [context, setContext] = useState();
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [prevMouseCoord, setPrevMouseCoord] = useState();
 
   const getCoordOfMouse = (event) => {
     const { clientX, clientY } = event;
     const mouseX = clientX - canvasRef.current.offsetLeft;
     const mouseY = clientY - canvasRef.current.offsetTop;
-    let coordX = Math.floor(mouseX / pixelSize, 10);
-    let coordY = Math.floor(mouseY / pixelSize, 10);
-    coordX = Math.max(0, Math.min(coordX, width - 1));
-    coordY = Math.max(0, Math.min(coordY, height - 1));
+    const coordX = Math.floor(mouseX / pixelSize, 10);
+    const coordY = Math.floor(mouseY / pixelSize, 10);
     return { x: coordX, y: coordY };
   };
 
-  const onMouseDown = () => {
-    setIsMouseDown(true);
-  };
-
-  const onMouseUp = () => {
-    setIsMouseDown(false);
-  };
-
-  const onMouseMove = (event) => {
-    if (isMouseDown) {
-      const { x, y } = getCoordOfMouse(event);
-      setValues((prevValues) => {
-        const newValues = [...prevValues];
-        const index = y * width + x;
-        newValues[index] = 1;
-        return newValues;
-      });
+  const getLinePixelCoords = (startX, startY, endX, endY) => {
+    let x = startX;
+    let y = startY;
+    const indices = [];
+    const deltaX = Math.abs(endX - x);
+    const deltaY = Math.abs(endY - y);
+    const stepX = x < endX ? 1 : -1;
+    const stepY = y < endY ? 1 : -1;
+    let error = deltaX - deltaY;
+    while (x !== endX || y !== endY) {
+      indices.push({ x, y });
+      const doubleError = 2 * error;
+      if (doubleError > -deltaY) {
+        error -= deltaY;
+        x += stepX;
+      }
+      if (doubleError < deltaX) {
+        error += deltaX;
+        y += stepY;
+      }
     }
+    indices.push({ x: endX, y: endY });
+    return indices;
   };
 
-  useEffect(() => {
-    setContext(canvasRef.current.getContext('2d'));
-  }, [canvasRef]);
+  const isCoordWithinBounds = (x, y) => x >= 0 && x < width && y >= 0 && y < height;
 
-  useEffect(() => {
+  const updateValues = (x, y) => {
+    setValues((prevValues) => {
+      const newValues = [...prevValues];
+      const pixelCoords = getLinePixelCoords(prevMouseCoord.x, prevMouseCoord.y, x, y)
+        .filter((coord) => isCoordWithinBounds(coord.x, coord.y));
+      const indices = pixelCoords.map((coord) => coord.y * width + coord.x);
+      return newValues.map((value, index) => {
+        if (indices.includes(index)) {
+          return 1;
+        }
+        return value;
+      });
+    });
+  };
+
+  const updateCanvas = () => {
     if (!context) return;
     context.fillStyle = 'white';
     context.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -57,17 +74,43 @@ export default function Canvas({
         context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
       }
     }
+  };
+
+  const onMouseDown = () => {
+    setIsMouseDown(true);
+  };
+
+  const onMouseUp = () => {
+    setIsMouseDown(false);
+  };
+
+  const onMouseMove = (event) => {
+    const { x, y } = getCoordOfMouse(event);
+    if (isMouseDown) {
+      updateValues(x, y);
+    }
+    setPrevMouseCoord({ x, y });
+  };
+
+  useEffect(() => {
+    setContext(canvasRef.current.getContext('2d'));
+  }, [canvasRef]);
+
+  useEffect(() => {
+    updateCanvas();
   }, [context, values]);
 
   useEffect(() => {
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
 
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [isMouseDown, prevMouseCoord]);
 
   return (
     <canvas
@@ -75,7 +118,6 @@ export default function Canvas({
       ref={canvasRef}
       width={width * pixelSize}
       height={height * pixelSize}
-      onMouseMove={onMouseMove}
     />
   );
 }
