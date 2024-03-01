@@ -3,12 +3,23 @@ import PropTypes from 'prop-types';
 import styles from './canvas.module.css';
 
 export default function Canvas({
-  values, width, height, pixelSize,
+  values, setValues, width, height, pixelSize,
 }) {
   const canvasRef = useRef();
 
   const [context, setContext] = useState();
   const [isMouseDown, setIsMouseDown] = useState(false);
+
+  const getCoordOfMouse = (event) => {
+    const { clientX, clientY } = event;
+    const mouseX = clientX - canvasRef.current.offsetLeft;
+    const mouseY = clientY - canvasRef.current.offsetTop;
+    let coordX = Math.floor(mouseX / pixelSize, 10);
+    let coordY = Math.floor(mouseY / pixelSize, 10);
+    coordX = Math.max(0, Math.min(coordX, width - 1));
+    coordY = Math.max(0, Math.min(coordY, height - 1));
+    return { x: coordX, y: coordY };
+  };
 
   const onMouseDown = () => {
     setIsMouseDown(true);
@@ -16,6 +27,18 @@ export default function Canvas({
 
   const onMouseUp = () => {
     setIsMouseDown(false);
+  };
+
+  const onMouseMove = (event) => {
+    if (isMouseDown) {
+      const { x, y } = getCoordOfMouse(event);
+      setValues((prevValues) => {
+        const newValues = [...prevValues];
+        const index = y * width + x;
+        newValues[index] = 1;
+        return newValues;
+      });
+    }
   };
 
   useEffect(() => {
@@ -52,12 +75,14 @@ export default function Canvas({
       ref={canvasRef}
       width={width * pixelSize}
       height={height * pixelSize}
+      onMouseMove={onMouseMove}
     />
   );
 }
 
 Canvas.propTypes = {
   values: PropTypes.arrayOf(PropTypes.number).isRequired,
+  setValues: PropTypes.func.isRequired,
   width: PropTypes.number.isRequired,
   height: PropTypes.number.isRequired,
   pixelSize: PropTypes.number.isRequired,
