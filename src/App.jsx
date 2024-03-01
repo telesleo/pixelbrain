@@ -1,22 +1,12 @@
-import React, { useState } from 'react';
-import Canvas from './components/Canvas';
-
-const CANVAS_SIZE = 16;
-const PIXEL_SIZE = 10;
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import DatasetCreator from './pages/DatasetCreator';
 
 function App() {
-  const [canvasValues, setCanvasValues] = useState(Array(CANVAS_SIZE ** 2).fill(0));
-
   return (
-    <div className="App">
-      <Canvas
-        values={canvasValues}
-        setValues={setCanvasValues}
-        width={CANVAS_SIZE}
-        height={CANVAS_SIZE}
-        pixelSize={PIXEL_SIZE}
-      />
-    </div>
+    <Routes>
+      <Route path="/dataset-creator" element={<DatasetCreator />} />
+    </Routes>
   );
 }
 
