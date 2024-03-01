@@ -47,6 +47,10 @@ export default function Canvas({
 
   const isCoordWithinBounds = (x, y) => x >= 0 && x < width && y >= 0 && y < height;
 
+  const clearValues = () => {
+    setValues(new Array(width * height).fill(0));
+  };
+
   const updateValues = (x, y) => {
     setValues((prevValues) => {
       const newValues = [...prevValues];
@@ -113,12 +117,15 @@ export default function Canvas({
   }, [isMouseDown, prevMouseCoord]);
 
   return (
-    <canvas
-      className={styles.canvas}
-      ref={canvasRef}
-      width={width * pixelSize}
-      height={height * pixelSize}
-    />
+    <div>
+      <canvas
+        className={styles.canvas}
+        ref={canvasRef}
+        width={width * pixelSize}
+        height={height * pixelSize}
+      />
+      <button className={styles['clear-button']} type="button" onClick={clearValues}>Clear</button>
+    </div>
   );
 }
 
