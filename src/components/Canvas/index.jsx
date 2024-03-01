@@ -8,7 +8,7 @@ export default function Canvas({
   const canvasRef = useRef();
 
   const [context, setContext] = useState();
-  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [mouse, setMouse] = useState(0);
   const [prevMouseCoord, setPrevMouseCoord] = useState();
 
   const getCoordOfMouse = (event) => {
@@ -51,17 +51,17 @@ export default function Canvas({
     setValues(new Array(width * height).fill(0));
   };
 
-  const updateValues = (x, y) => {
+  const updateValues = (x, y, value) => {
     setValues((prevValues) => {
       const newValues = [...prevValues];
       const pixelCoords = getLinePixelCoords(prevMouseCoord.x, prevMouseCoord.y, x, y)
         .filter((coord) => isCoordWithinBounds(coord.x, coord.y));
       const indices = pixelCoords.map((coord) => coord.y * width + coord.x);
-      return newValues.map((value, index) => {
+      return newValues.map((newValue, index) => {
         if (indices.includes(index)) {
-          return 1;
+          return (value === 1) ? 1 : 0;
         }
-        return value;
+        return newValue;
       });
     });
   };
@@ -80,20 +80,24 @@ export default function Canvas({
     }
   };
 
-  const onMouseDown = () => {
-    setIsMouseDown(true);
+  const onMouseDown = (event) => {
+    setMouse(event.buttons);
   };
 
-  const onMouseUp = () => {
-    setIsMouseDown(false);
+  const onMouseUp = (event) => {
+    setMouse(event.buttons);
   };
 
   const onMouseMove = (event) => {
     const { x, y } = getCoordOfMouse(event);
-    if (isMouseDown) {
-      updateValues(x, y);
+    if (mouse > 0) {
+      updateValues(x, y, mouse);
     }
     setPrevMouseCoord({ x, y });
+  };
+
+  const onContextMenu = (event) => {
+    event.preventDefault();
   };
 
   useEffect(() => {
@@ -108,13 +112,12 @@ export default function Canvas({
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
-
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
     };
-  }, [isMouseDown, prevMouseCoord]);
+  }, [mouse, prevMouseCoord]);
 
   return (
     <div>
@@ -123,6 +126,7 @@ export default function Canvas({
         ref={canvasRef}
         width={width * pixelSize}
         height={height * pixelSize}
+        onContextMenu={onContextMenu}
       />
       <button className={styles['clear-button']} type="button" onClick={clearValues}>Clear</button>
     </div>
