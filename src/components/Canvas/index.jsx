@@ -8,6 +8,15 @@ export default function Canvas({
   const canvasRef = useRef();
 
   const [context, setContext] = useState();
+  const [isMouseDown, setIsMouseDown] = useState(false);
+
+  const onMouseDown = () => {
+    setIsMouseDown(true);
+  };
+
+  const onMouseUp = () => {
+    setIsMouseDown(false);
+  };
 
   useEffect(() => {
     setContext(canvasRef.current.getContext('2d'));
@@ -26,6 +35,16 @@ export default function Canvas({
       }
     }
   }, [context, values]);
+
+  useEffect(() => {
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
 
   return (
     <canvas
