@@ -53,12 +53,46 @@ export default function DatasetCreator() {
     }
   };
 
+  const loadDataset = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (onLoadEvent) => {
+      const jsonData = JSON.parse(onLoadEvent.target.result);
+      setLabels(jsonData.labels);
+      setData(jsonData.data);
+    };
+    reader.readAsText(file);
+  };
+
+  const downloadDataset = () => {
+    const jsonData = JSON.stringify({
+      labels,
+      'canvas-width': CANVAS_SIZE,
+      'canvas-height': CANVAS_SIZE,
+      data,
+    });
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dataset.json';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     setRandomLabelIndex();
   }, [labels]);
 
   return (
     <div>
+      <section>
+        <label htmlFor="load-dataset">
+          {'Load dataset: '}
+          <input id="load-dataset" type="file" onChange={loadDataset} />
+        </label>
+      </section>
       <section>
         <div id={styles['label-list']}>
           {
@@ -79,8 +113,9 @@ export default function DatasetCreator() {
       </section>
       {
         (labels.length > 0) && (
-          <section>
-            {
+          <>
+            <section>
+              {
               labels.map((label, index) => (
                 <label key={label} htmlFor={label}>
                   <input
@@ -94,17 +129,22 @@ export default function DatasetCreator() {
                 </label>
               ))
             }
-            <Canvas
-              values={canvasValues}
-              setValues={setCanvasValues}
-              width={CANVAS_SIZE}
-              height={CANVAS_SIZE}
-              pixelSize={PIXEL_SIZE}
-            />
-            <button type="button" onClick={addDrawing}>Add drawing</button>
-          </section>
+              <Canvas
+                values={canvasValues}
+                setValues={setCanvasValues}
+                width={CANVAS_SIZE}
+                height={CANVAS_SIZE}
+                pixelSize={PIXEL_SIZE}
+              />
+              <button type="button" onClick={addDrawing}>Add drawing</button>
+            </section>
+            <section>
+              <button type="button" onClick={downloadDataset}>Download dataset</button>
+            </section>
+          </>
         )
       }
+
       <section id={styles.records}>
         {
           data.map((record, index) => (
