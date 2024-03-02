@@ -4,6 +4,7 @@ import styles from './dataset-creator.module.css';
 
 const CANVAS_SIZE = 16;
 const PIXEL_SIZE = 16;
+const RECORD_CANVAS_PIXEL_SIZE = 6;
 
 export default function DatasetCreator() {
   const [labels, setLabels] = useState([]);
@@ -41,7 +42,7 @@ export default function DatasetCreator() {
   };
 
   const addDrawing = () => {
-    setData((prevData) => [...prevData, canvasValues]);
+    setData((prevData) => [...prevData, { values: canvasValues, label: labelIndex }]);
     clearCanvas();
     setRandomLabelIndex();
   };
@@ -104,6 +105,21 @@ export default function DatasetCreator() {
           </section>
         )
       }
+      <section id={styles.records}>
+        {
+          data.map((record, index) => (
+            <div key={index}>
+              <Canvas
+                values={record.values}
+                width={CANVAS_SIZE}
+                height={CANVAS_SIZE}
+                pixelSize={RECORD_CANVAS_PIXEL_SIZE}
+              />
+              <p>{record.label}</p>
+            </div>
+          ))
+        }
+      </section>
     </div>
   );
 }
