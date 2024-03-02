@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import styles from './canvas.module.css';
 
 export default function Canvas({
-  values, setValues, width, height, pixelSize,
+  values, width, height, pixelSize, setValues,
 }) {
   const canvasRef = useRef();
 
@@ -97,7 +97,9 @@ export default function Canvas({
   };
 
   const onContextMenu = (event) => {
-    event.preventDefault();
+    if (setValues) {
+      event.preventDefault();
+    }
   };
 
   useEffect(() => {
@@ -109,15 +111,19 @@ export default function Canvas({
   }, [context, values]);
 
   useEffect(() => {
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('mousemove', onMouseMove);
+    if (setValues) {
+      window.addEventListener('mousedown', onMouseDown);
+      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('mousemove', onMouseMove);
+    }
     return () => {
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('mousemove', onMouseMove);
+      if (setValues) {
+        window.removeEventListener('mousedown', onMouseDown);
+        window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('mousemove', onMouseMove);
+      }
     };
-  }, [mouse, prevMouseCoord]);
+  }, [setValues, mouse, prevMouseCoord]);
 
   return (
     <div>
@@ -128,15 +134,23 @@ export default function Canvas({
         height={height * pixelSize}
         onContextMenu={onContextMenu}
       />
-      <button className={styles['clear-button']} type="button" onClick={clearValues}>Clear</button>
+      {
+        (setValues) && (
+          <button className={styles['clear-button']} type="button" onClick={clearValues}>Clear</button>
+        )
+      }
     </div>
   );
 }
 
 Canvas.propTypes = {
   values: PropTypes.arrayOf(PropTypes.number).isRequired,
-  setValues: PropTypes.func.isRequired,
   width: PropTypes.number.isRequired,
   height: PropTypes.number.isRequired,
   pixelSize: PropTypes.number.isRequired,
+  setValues: PropTypes.func,
+};
+
+Canvas.defaultProps = {
+  setValues: null,
 };
